@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Planner - Backend Test</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>📚 Study Planner - Backend Test</h1>
+        <p class="subtitle">Testing Full-Stack Architecture with Simulated Network</p>
+
+        <!-- Network Configuration Section -->
+        <div class="test-section">
+            <h2>🌐 Network Configuration</h2>
+            <div class="info-box">
+                <strong>How it works:</strong> The network layer simulates real-world conditions with random delays (1-3 seconds) 
+                and message drops (configurable). This helps test how your application handles network issues.
+            </div>
+            <div class="network-config">
+                <div class="config-item">
+                    <label for="minDelay">Min Delay (ms):</label>
+                    <input type="number" id="minDelay" value="1000" min="0" max="5000">
+                </div>
+                <div class="config-item">
+                    <label for="maxDelay">Max Delay (ms):</label>
+                    <input type="number" id="maxDelay" value="3000" min="0" max="10000">
+                </div>
+                <div class="config-item">
+                    <label for="dropRate">Drop Rate (0-1):</label>
+                    <input type="number" id="dropRate" value="0.2" min="0" max="1" step="0.1">
+                </div>
+            </div>
+            <div class="button-group">
+                <button onclick="updateNetworkConfig()">Apply Network Config</button>
+                <button onclick="showNetworkStats()">Show Network Stats</button>
+                <button onclick="resetNetworkStats()">Reset Stats</button>
+            </div>
+        </div>
+
+        <!-- Authentication Tests Section -->
+        <div class="test-section">
+            <h2>🔐 Authentication Tests</h2>
+            <div id="authStatus" class="status-message status-info">
+                No user logged in
+            </div>
+            <div class="button-group">
+                <button onclick="testRegister()">Register New User</button>
+                <button onclick="testLogin()">Login Existing User</button>
+                <button onclick="testInvalidLogin()">Test Invalid Login</button>
+                <button onclick="testDuplicateRegister()">Test Duplicate Registration</button>
+            </div>
+        </div>
+
+        <!-- Tasks Tests Section -->
+        <div class="test-section">
+            <h2>📝 Tasks CRUD Tests</h2>
+            <div class="info-box">
+                <strong>Note:</strong> You must login first before testing task operations.
+            </div>
+            <div class="button-group">
+                <button onclick="testCreateTask()">Create Task</button>
+                <button onclick="testGetAllTasks()">Get All Tasks</button>
+                <button onclick="testUpdateTask()">Update Last Task</button>
+                <button onclick="testDeleteTask()">Delete Last Task</button>
+                <button onclick="testSearchTasks()">Search Tasks</button>
+            </div>
+        </div>
+
+        <!-- Complete Workflow Section -->
+        <div class="test-section">
+            <h2>🔄 Complete Workflow Tests</h2>
+            <div class="button-group">
+                <button onclick="runCompleteWorkflow()">Run Complete Workflow</button>
+                <button onclick="testMultipleRequests()">Test Multiple Concurrent Requests</button>
+                <button onclick="testNetworkFailures()">Test Network Failure Handling</button>
+            </div>
+        </div>
+
+        <!-- Database Management -->
+        <div class="test-section">
+            <h2>💾 Database Management</h2>
+            <div class="button-group">
+                <button onclick="showDatabaseState()">Show Database State</button>
+                <button onclick="clearDatabase()">Clear All Data</button>
+                <button onclick="seedDatabase()">Seed Test Data</button>
+            </div>
+        </div>
+
+        <!-- Cookie Management -->
+        <div class="test-section">
+            <h2>🍪 Cookie Management</h2>
+            <div class="info-box">
+                <strong>How cookies work:</strong> After login/register, your userId and email are stored in cookies.
+                This keeps you logged in between page refreshes. Cookies expire after 7 days.
+            </div>
+            <div class="button-group">
+                <button onclick="showCookies()">Show All Cookies</button>
+                <button onclick="testCookieAuth()">Test Cookie-based Auth</button>
+                <button onclick="clearCookies()">Clear All Cookies</button>
+                <button onclick="testLogout()">Test Logout (Clear Session)</button>
+            </div>
+        </div>
+
+        <!-- Output Section -->
+        <div class="test-section">
+            <h2>📋 Output Console</h2>
+            <button onclick="clearOutput()" style="margin-bottom: 10px;">Clear Output</button>
+            <div id="output"></div>
+        </div>
+    </div>
+
+    <!-- Load all JavaScript files -->
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/cookies.js"></script>
+    <script src="js/db/db_api.js"></script>
+    <script src="js/db/user_db.js"></script>
+    <script src="js/db/task_db.js"></script>
+    <script src="js/network/fajax.js"></script>
+    <script src="js/network/network.js"></script>
+    <script src="js/server/auth_server.js"></script>
+    <script src="js/server/task_server.js"></script>
+    <script src="js/client.js"></script>
+
+    <!-- Test Scripts -->
+    <script>
+        let lastTaskId = null;
+        
+        // Output helpers
+        function output(message, data = null) {
+            const outputDiv = document.getElementById('output');
+            const timestamp = new Date().toLocaleTimeString();
+            let output = `[${timestamp}] ${message}`;
+            if (data) {
+                output += '\n' + JSON.stringify(data, null, 2);
+            }
+            outputDiv.textContent += output + '\n\n';
+            outputDiv.scrollTop = outputDiv.scrollHeight;
+        }
+        
+        function clearOutput() {
+            document.getElementById('output').textContent = '';
+        }
+        
+        function updateAuthStatus(message, isSuccess) {
+            const statusDiv = document.getElementById('authStatus');
+            statusDiv.textContent = message;
+            statusDiv.className = 'status-message ' + (isSuccess ? 'status-success' : 'status-error');
+        }
+
+        // Network Configuration
+        function updateNetworkConfig() {
+            const minDelay = parseInt(document.getElementById('minDelay').value);
+            const maxDelay = parseInt(document.getElementById('maxDelay').value);
+            const dropRate = parseFloat(document.getElementById('dropRate').value);
+            
+            Network.updateConfig({ minDelay, maxDelay, dropRate });
+            output('✅ Network configuration updated', { minDelay, maxDelay, dropRate });
+        }
+        
+        function showNetworkStats() {
+            const stats = Network.getStats();
+            output('📊 Network Statistics:', stats);
+            Network.printStats();
+        }
+        
+        function resetNetworkStats() {
+            Network.resetStats();
+            output('🔄 Network statistics reset');
+        }
+
+        // Authentication Tests
+        async function testRegister() {
+            output('🔵 Testing user registration...');
+            const email = `test${Date.now()}@example.com`;
+            const password = 'password123';
+            const name = 'Test User';
+            
+            try {
+                const response = await TestClient.register(email, password, name);
+                output('Registration successful!', response.data);
+                updateAuthStatus(`Logged in as: ${response.data.user.email}`, true);
+            } catch (error) {
+                output('Registration failed:', error);
+                updateAuthStatus('Registration failed', false);
+            }
+        }
+        
+        async function testLogin() {
+            output('🔵 Testing user login...');
+            
+            // First register a user
+            const email = 'testuser@example.com';
+            const password = 'password123';
+            
+            // Make sure user exists
+            if (!UsersDB.userExists(email)) {
+                UsersDB.addUser({ email, password, name: 'Test User' });
+            }
+            
+            try {
+                const response = await TestClient.login(email, password);
+                output('✅ Login successful!', response.data);
+                updateAuthStatus(`Logged in as: ${response.data.user.email}`, true);
+            } catch (error) {
+                output('❌ Login failed:', error);
+                updateAuthStatus('Login failed', false);
+            }
+        }
+        
+        async function testInvalidLogin() {
+            output('🔵 Testing invalid login credentials...');
+            
+            try {
+                await TestClient.login('invalid@example.com', 'wrongpassword');
+            } catch (error) {
+                output('✅ Invalid login correctly rejected:', error);
+            }
+        }
+        
+        async function testDuplicateRegister() {
+            output('🔵 Testing duplicate registration...');
+            const email = 'duplicate@example.com';
+            
+            // Register first user
+            if (!UsersDB.userExists(email)) {
+                UsersDB.addUser({ email, password: 'password123', name: 'Duplicate Test' });
+            }
+            
+            // Try to register again
+            try {
+                await TestClient.register(email, 'password123', 'Duplicate Test');
+            } catch (error) {
+                output('✅ Duplicate registration correctly rejected:', error);
+            }
+        }
+
+        // Task Tests
+        async function testCreateTask() {
+            if (!TestClient.isLoggedIn()) {
+                output('❌ Please login first!');
+                return;
+            }
+            
+            output('🔵 Testing task creation...');
+            
+            const taskData = {
+                title: 'Complete Math Assignment',
+                description: 'Finish chapter 5 exercises',
+                subject: 'Mathematics',
+                dueDate: '2024-12-31',
+                priority: 'high'
+            };
+            
+            try {
+                const response = await TestClient.createTask(taskData);
+                lastTaskId = response.data.task.id;
+                output('✅ Task created successfully!', response.data);
+            } catch (error) {
+                output('❌ Task creation failed:', error);
+            }
+        }
+        
+        async function testGetAllTasks() {
+            if (!TestClient.isLoggedIn()) {
+                output('❌ Please login first!');
+                return;
+            }
+            
+            output('🔵 Getting all tasks...');
+            
+            try {
+                const response = await TestClient.getTasks();
+                output(`✅ Retrieved ${response.data.tasks.length} tasks:`, response.data);
+            } catch (error) {
+                output('❌ Get tasks failed:', error);
+            }
+        }
+        
+        async function testUpdateTask() {
+            if (!TestClient.isLoggedIn()) {
+                output('❌ Please login first!');
+                return;
+            }
+            
+            if (!lastTaskId) {
+                output('❌ No task to update. Create a task first!');
+                return;
+            }
+            
+            output('🔵 Testing task update...');
+            
+            const updates = {
+                title: 'Updated: Complete Math Assignment',
+                completed: true
+            };
+            
+            try {
+                const response = await TestClient.updateTask(lastTaskId, updates);
+                output('✅ Task updated successfully!', response.data);
+            } catch (error) {
+                output('❌ Task update failed:', error);
+            }
+        }
+        
+        async function testDeleteTask() {
+            if (!TestClient.isLoggedIn()) {
+                output('❌ Please login first!');
+                return;
+            }
+            
+            if (!lastTaskId) {
+                output('❌ No task to delete. Create a task first!');
+                return;
+            }
+            
+            output('🔵 Testing task deletion...');
+            
+            try {
+                const response = await TestClient.deleteTask(lastTaskId);
+                output('✅ Task deleted successfully!', response.data);
+                lastTaskId = null;
+            } catch (error) {
+                output('❌ Task deletion failed:', error);
+            }
+        }
+        
+        async function testSearchTasks() {
+            if (!TestClient.isLoggedIn()) {
+                output('❌ Please login first!');
+                return;
+            }
+            
+            output('🔵 Testing task search...');
+            
+            try {
+                const response = await TestClient.getTasks({ search: 'Math' });
+                output(`✅ Search found ${response.data.tasks.length} tasks:`, response.data);
+            } catch (error) {
+                output('❌ Task search failed:', error);
+            }
+        }
+
+        // Complete Workflow
+        async function runCompleteWorkflow() {
+            output('🔵🔵🔵 Starting complete workflow test...\n');
+            
+            try {
+                // 1. Register
+                output('Step 1: Registering new user...');
+                const email = `workflow${Date.now()}@example.com`;
+                await TestClient.register(email, 'password123', 'Workflow Test');
+                
+                await sleep(500);
+                
+                // 2. Create multiple tasks
+                output('Step 2: Creating multiple tasks...');
+                await TestClient.createTask({
+                    title: 'Study Physics',
+                    subject: 'Physics',
+                    priority: 'high'
+                });
+                
+                await sleep(500);
+                
+                await TestClient.createTask({
+                    title: 'Read History Chapter',
+                    subject: 'History',
+                    priority: 'medium'
+                });
+                
+                await sleep(500);
+                
+                // 3. Get all tasks
+                output('Step 3: Retrieving all tasks...');
+                const tasksResponse = await TestClient.getTasks();
+                
+                await sleep(500);
+                
+                // 4. Update first task
+                if (tasksResponse.data.tasks.length > 0) {
+                    output('Step 4: Updating first task...');
+                    const firstTask = tasksResponse.data.tasks[0];
+                    await TestClient.updateTask(firstTask.id, { completed: true });
+                }
+                
+                await sleep(500);
+                
+                // 5. Search tasks
+                output('Step 5: Searching tasks...');
+                await TestClient.getTasks({ search: 'Study' });
+                
+                output('\n✅✅✅ Complete workflow finished successfully!');
+            } catch (error) {
+                output('\n❌❌❌ Workflow failed:', error);
+            }
+        }
+        
+        async function testMultipleRequests() {
+            if (!TestClient.isLoggedIn()) {
+                output('❌ Please login first!');
+                return;
+            }
+            
+            output('🔵 Testing multiple concurrent requests...');
+            
+            const promises = [
+                TestClient.createTask({ title: 'Task 1', subject: 'Math' }),
+                TestClient.createTask({ title: 'Task 2', subject: 'Physics' }),
+                TestClient.createTask({ title: 'Task 3', subject: 'Chemistry' }),
+                TestClient.getTasks()
+            ];
+            
+            try {
+                const results = await Promise.allSettled(promises);
+                output('✅ Concurrent requests completed:', results);
+            } catch (error) {
+                output('❌ Concurrent requests failed:', error);
+            }
+        }
+        
+        async function testNetworkFailures() {
+            output('🔵 Testing network failure handling...');
+            output('Setting high drop rate (80%)...');
+            
+            // Set high drop rate temporarily
+            const originalDropRate = Network.config.dropRate;
+            Network.updateConfig({ dropRate: 0.8 });
+            
+            // Try multiple requests
+            for (let i = 0; i < 5; i++) {
+                try {
+                    output(`Attempt ${i + 1}...`);
+                    await TestClient.getTasks();
+                    output('✅ Request succeeded');
+                    break;
+                } catch (error) {
+                    output(`❌ Request failed: ${error.message}`);
+                    if (i < 4) await sleep(1000);
+                }
+            }
+            
+            // Restore original drop rate
+            Network.updateConfig({ dropRate: originalDropRate });
+            output('Network configuration restored');
+        }
+
+        // Database Management
+        function showDatabaseState() {
+            const users = UsersDB.getAllUsers();
+            const tasks = TasksDB.getAllTasks();
+            
+            output('📊 Database State:');
+            output(`Users (${users.length}):`, users);
+            output(`Tasks (${tasks.length}):`, tasks);
+        }
+        
+        function clearDatabase() {
+            if (confirm('Are you sure you want to clear all data?')) {
+                UsersDB.clearAllUsers();
+                TasksDB.clearAllTasks();
+                TestClient.logout();
+                updateAuthStatus('Database cleared', false);
+                output('✅ All database data cleared');
+            }
+        }
+        
+        function seedDatabase() {
+            // Create test users
+            const user1 = UsersDB.addUser({
+                email: 'student1@example.com',
+                password: 'password123',
+                name: 'Student One'
+            });
+            
+            const user2 = UsersDB.addUser({
+                email: 'student2@example.com',
+                password: 'password123',
+                name: 'Student Two'
+            });
+            
+            // Create test tasks
+            TasksDB.addTask({
+                userId: user1.id,
+                title: 'Complete Math Homework',
+                description: 'Chapter 7 exercises 1-20',
+                subject: 'Mathematics',
+                priority: 'high',
+                dueDate: '2024-12-31'
+            });
+            
+            TasksDB.addTask({
+                userId: user1.id,
+                title: 'Study for Physics Exam',
+                description: 'Review chapters 1-5',
+                subject: 'Physics',
+                priority: 'high',
+                dueDate: '2024-12-25'
+            });
+            
+            TasksDB.addTask({
+                userId: user2.id,
+                title: 'Read History Chapter',
+                description: 'Chapter 12: World War II',
+                subject: 'History',
+                priority: 'medium',
+                dueDate: '2024-12-28'
+            });
+            
+            output('✅ Test data seeded successfully');
+            showDatabaseState();
+        }
+
+        // Cookie Management
+        function showCookies() {
+            const cookies = CookieManager.getAll();
+            const cookieCount = Object.keys(cookies).length;
+            
+            output(`🍪 Browser Cookies (${cookieCount} total):`, cookies);
+            
+            if (cookieCount === 0) {
+                output('ℹ️ No cookies set. Login or register to create session cookies.');
+            } else {
+                output('\nCookie Details:');
+                for (const [name, value] of Object.entries(cookies)) {
+                    output(`  ${name}: ${value.substring(0, 50)}${value.length > 50 ? '...' : ''}`);
+                }
+            }
+        }
+        
+        async function testCookieAuth() {
+            output('🔵 Testing cookie-based authentication...');
+            
+            // Check if we have auth cookies
+            const userId = CookieManager.get(COOKIE_NAMES.USER_ID);
+            const email = CookieManager.get(COOKIE_NAMES.USER_EMAIL);
+            
+            if (!userId) {
+                output('❌ No userId in cookies. Please login first!');
+                return;
+            }
+            
+            output('✅ Auth cookies found:', { 
+                userId, 
+                email: decodeURIComponent(email)
+            });
+            
+            // Try to fetch tasks using cookie-based auth
+            output('🔵 Fetching tasks using cookies...');
+            
+            try {
+                const response = await TestClient.getTasks();
+                output('✅ Cookie-based authentication successful!', response.data);
+            } catch (error) {
+                output('❌ Cookie-based authentication failed:', error);
+            }
+        }
+        
+        function clearCookies() {
+            if (confirm('Clear all cookies?')) {
+                CookieManager.clearAll();
+                output('✅ All cookies cleared');
+                updateAuthStatus('Cookies cleared - logged out', false);
+            }
+        }
+        
+        function testLogout() {
+            output('🔵 Testing logout (clearing session)...');
+            
+            if (!TestClient.isLoggedIn()) {
+                output('❌ No active session to logout from');
+                return;
+            }
+            
+            TestClient.logout();
+            output('✅ Logout successful - cookies cleared');
+            updateAuthStatus('Logged out', false);
+            showCookies();
+        }
+
+        // Utility
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Initialize
+        window.onload = function() {
+            output('🚀 Backend Test Page Loaded');
+            output('System initialized and ready for testing!');
+            showNetworkStats();
+
+            // Restore session from cookies if available
+            const restoredUser = TestClient.restoreSession();
+            if (restoredUser) {
+                output('🍪 Session restored from cookies!', restoredUser);
+                updateAuthStatus(`Restored session: ${restoredUser.email}`, true);
+            } else {
+                output('🍪 No saved session found in cookies.');
+            }
+        };
+    </script>
+</body>
+</html>
