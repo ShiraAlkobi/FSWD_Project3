@@ -3,346 +3,256 @@
  * Handles SPA routing, UI interactions, and Business Logic
  */
 
-const app = {
-    // Application State
-    currentUser: null,
-    tasks: [],
-    currentView: 'login',
-    editingTask: null, // Holds task object when editing
-
-    /**
-     * Initialize the Application
-     */
-    init: function() {
-        console.log('🚀 Study Planner App Initializing...');
-        
-        // Check for existing session using the Client's restore method
-        const user = TestClient.restoreSession();
-        
-        if (user) {
-            this.currentUser = user;
-            this.navigate('dashboard');
-        } else {
-            this.navigate('login');
-        }
-    },
-
-    /**
-     * Router: Switches between templates
-     * @param {string} viewName - The ID suffix of the template
-     * @param {object} params - Optional parameters for the view
-     */
-    navigate: function(viewName, params = {}) {
-        const appContainer = document.getElementById('app');
-        const template = document.getElementById(`${viewName}-template`);
-        
-        if (!template) {
-            console.error(`View '${viewName}' not found`);
-            return;
-        }
-
-        this.currentView = viewName;
-
-        // Clear current view
-        appContainer.innerHTML = '';
-        
-        // Clone template content and append to app container
-        const clone = template.content.cloneNode(true);
-        appContainer.appendChild(clone);
-
-        // Run specific logic for views after rendering
-        if (viewName === 'dashboard') {
-            this.initDashboard();
-        } else if (viewName === 'task-form') {
-            this.initTaskForm(params);
-        }
-    },
-
-    // ================== AUTHENTICATION ==================
-
-    handleLogin: async function(event) {
-        event.preventDefault();
-        
-        const email = document.getElementById('loginEmail').value;
-        const password = document.getElementById('loginPassword').value;
-        const errorDiv = document.getElementById('loginError');
-        const btn = event.target.querySelector('button');
-
-        errorDiv.textContent = '';
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Logging in...';
-
-        try {
-            const response = await TestClient.login(email, password);
-            this.currentUser = response.data.user;
-            this.navigate('dashboard');
-        } catch (error) {
-            errorDiv.textContent = error.message || 'Login failed.';
-            btn.disabled = false;
-            btn.innerHTML = '<span>Login</span> <i class="fa-solid fa-arrow-right"></i>';
-        }
-    },
-
-    handleRegister: async function(event) {
-        event.preventDefault();
-        
-        const name = document.getElementById('regName').value;
-        const email = document.getElementById('regEmail').value;
-        const password = document.getElementById('regPassword').value;
-        const errorDiv = document.getElementById('registerError');
-        const btn = event.target.querySelector('button');
-
-        errorDiv.textContent = '';
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Creating Account...';
-
-        try {
-            const response = await TestClient.register(email, password, name);
-            this.currentUser = response.data.user;
-            this.navigate('dashboard');
-        } catch (error) {
-            errorDiv.textContent = error.message || 'Registration failed.';
-            btn.disabled = false;
-            btn.textContent = 'Create Account';
-        }
-    },
-
-    handleLogout: function() {
-        TestClient.logout();
-        this.currentUser = null;
-        this.navigate('login');
-    },
-
-    // ================== DASHBOARD LOGIC ==================
-
-    initDashboard: function() {
-        if (this.currentUser) {
-            document.getElementById('userNameDisplay').textContent = this.currentUser.name.split(' ')[0];
-            this.loadTasks();
-        }
-    },
-
-    /**
-     * Load tasks from server with optional filters
-     */
-    loadTasks: async function(filters = {}) {
-        const container = document.getElementById('tasksContainer');
-        container.innerHTML = '<div class="loading-spinner"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading tasks...</div>';
-
-        try {
-            const response = await TestClient.getTasks(filters);
-            this.tasks = response.data.tasks;
-            this.renderTasks();
-            this.updateStats();
-        } catch (error) {
-            console.error('Failed to load tasks:', error);
-            container.innerHTML = `<div class="error-message">Failed to load tasks: ${error.message}</div>`;
-        }
-    },
-
-    /**
-     * Render tasks to the DOM
-     */
-    renderTasks: function() {
-        const container = document.getElementById('tasksContainer');
-        container.innerHTML = '';
-
-        if (this.tasks.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <i class="fa-solid fa-clipboard-list" style="font-size: 3rem; color: var(--border); margin-bottom: 1rem;"></i>
-                    <h3>No tasks found</h3>
-                    <p>Click "Add Task" to create your first task.</p>
-                </div>
-            `;
-            return;
-        }
-
-        this.tasks.forEach(task => {
-            const card = document.createElement('div');
-            card.className = `task-card fade-in ${task.completed ? 'completed' : ''}`;
-            
-            // Format Date
-            const date = new Date(task.dueDate);
-            const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            
-            // Check overdue
-            const isOverdue = !task.completed && new Date() > date;
-            const dateClass = isOverdue ? 'color: var(--danger); font-weight: bold;' : '';
-
-            card.innerHTML = `
-                <div class="task-header">
-                    <span class="badge badge-${task.priority}">${task.priority}</span>
-                    <div class="task-actions-menu">
-                        <button class="btn-icon-sm" onclick="app.handleEditTask('${task.id}')" title="Edit">
-                            <i class="fa-solid fa-pen"></i>
-                        </button>
-                        <button class="btn-icon-sm delete" onclick="app.handleDeleteTask('${task.id}')" title="Delete">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="task-subject">${task.subject}</div>
-                <h3 class="task-title">${task.title}</h3>
-                <p class="task-desc">${task.description || 'No description provided.'}</p>
-                <div class="task-footer">
-                    <span style="${dateClass}">
-                        <i class="fa-regular fa-calendar"></i> ${dateStr}
-                    </span>
-                    <label style="cursor: pointer; display: flex; align-items: center; gap: 5px;">
-                        <input type="checkbox" ${task.completed ? 'checked' : ''} 
-                            onchange="app.handleToggleComplete('${task.id}', this.checked)">
-                        ${task.completed ? 'Completed' : 'Mark Done'}
-                    </label>
-                </div>
-            `;
-            container.appendChild(card);
-        });
-    },
-
-    updateStats: function() {
-        const total = this.tasks.length;
-        const completed = this.tasks.filter(t => t.completed).length;
-        const pending = total - completed;
-
-        document.getElementById('totalTasksCount').textContent = total;
-        document.getElementById('pendingTasksCount').textContent = pending;
-        document.getElementById('completedTasksCount').textContent = completed;
-    },
-
-    // ================== TASK ACTIONS ==================
-
-    handleSearch: function(event) {
-        // Use timeout to debounce search inputs slightly
-        if (this.searchTimeout) clearTimeout(this.searchTimeout);
-        
-        this.searchTimeout = setTimeout(() => {
-            const query = event.target.value;
-            // The backend supports a 'search' query parameter
-            if (query.length > 0) {
-                this.loadTasks({ search: query });
-            } else {
-                this.loadTasks(); // Load all if empty
-            }
-        }, 500);
-    },
-
-    handleFilter: function(event) {
-        const priority = event.target.value;
-        const filters = priority ? { priority: priority } : {};
-        // Add current search text if exists
-        const searchText = document.getElementById('searchInput').value;
-        if(searchText) filters.search = searchText;
-        
-        this.loadTasks(filters);
-    },
-
-    handleToggleComplete: async function(taskId, isCompleted) {
-        try {
-            // Optimistic update
-            const task = this.tasks.find(t => t.id === taskId);
-            if (task) task.completed = isCompleted;
-            this.renderTasks(); // Re-render immediately
-            this.updateStats();
-
-            // Send to server
-            await TestClient.updateTask(taskId, { completed: isCompleted });
-            
-            // Note: In a real app we might revert if server fails
-        } catch (error) {
-            console.error('Failed to update task:', error);
-            alert('Failed to update task status');
-            this.loadTasks(); // Revert to server state
-        }
-    },
-
-    handleDeleteTask: async function(taskId) {
-        if (!confirm('Are you sure you want to delete this task?')) return;
-
-        try {
-            await TestClient.deleteTask(taskId);
-            // Remove locally to avoid reload
-            this.tasks = this.tasks.filter(t => t.id !== taskId);
-            this.renderTasks();
-            this.updateStats();
-        } catch (error) {
-            console.error('Failed to delete task:', error);
-            alert('Failed to delete task');
-        }
-    },
-
-    handleEditTask: function(taskId) {
-        const task = this.tasks.find(t => t.id === taskId);
-        if (task) {
-            this.navigate('task-form', { task: task });
-        }
-    },
-
-    // ================== TASK FORM LOGIC ==================
-
-    initTaskForm: function(params) {
-        if (params && params.task) {
-            // Editing Mode
-            this.editingTask = params.task;
-            document.getElementById('formTitle').textContent = 'Edit Task';
-            document.getElementById('taskId').value = params.task.id;
-            document.getElementById('taskTitle').value = params.task.title;
-            document.getElementById('taskSubject').value = params.task.subject;
-            document.getElementById('taskPriority').value = params.task.priority;
-            document.getElementById('taskDescription').value = params.task.description;
-            
-            // Format date for input type="date" (YYYY-MM-DD)
-            if (params.task.dueDate) {
-                const date = new Date(params.task.dueDate);
-                const isoDate = date.toISOString().split('T')[0];
-                document.getElementById('taskDueDate').value = isoDate;
-            }
-        } else {
-            // Create Mode
-            this.editingTask = null;
-            document.getElementById('formTitle').textContent = 'Add New Task';
-            document.getElementById('taskId').value = '';
-            // Set default date to today
-            document.getElementById('taskDueDate').value = new Date().toISOString().split('T')[0];
-        }
-    },
-
-    handleTaskSubmit: async function(event) {
-        event.preventDefault();
-        
-        const taskId = document.getElementById('taskId').value;
-        const taskData = {
-            title: document.getElementById('taskTitle').value,
-            subject: document.getElementById('taskSubject').value,
-            priority: document.getElementById('taskPriority').value,
-            dueDate: document.getElementById('taskDueDate').value,
-            description: document.getElementById('taskDescription').value
+// MOCK CLIENT FOR FUNCTIONALITY (Replace with your actual TestClient)
+        const TestClient = {
+            currentUser: null,
+            tasks: [],
+            login: async (e, p) => ({ data: { user: { name: 'Alex Johnson', email: e } } }),
+            register: async (e, p, n) => ({ data: { user: { name: n, email: e } } }),
+            getTasks: async () => ({ data: { tasks: TestClient.tasks } }),
+            createTask: async (t) => { t.id = Math.random().toString(36).substr(2, 9); TestClient.tasks.push(t); return { data: t }; },
+            updateTask: async (id, data) => { 
+                const idx = TestClient.tasks.findIndex(t => t.id === id);
+                if(idx > -1) TestClient.tasks[idx] = { ...TestClient.tasks[idx], ...data };
+            },
+            deleteTask: async (id) => { TestClient.tasks = TestClient.tasks.filter(t => t.id !== id); },
+            restoreSession: () => {
+                const saved = localStorage.getItem('study_user');
+                return saved ? JSON.parse(saved) : null;
+            },
+            logout: () => localStorage.removeItem('study_user')
         };
 
-        const btn = event.target.querySelector('button[type="submit"]');
-        btn.disabled = true;
-        btn.textContent = 'Saving...';
+        const app = {
+            currentUser: null,
+            tasks: [],
+            currentDate: new Date(),
 
-        try {
-            if (taskId) {
-                // Update
-                await TestClient.updateTask(taskId, taskData);
-            } else {
-                // Create
-                await TestClient.createTask(taskData);
+            init: function() {
+                this.currentUser = TestClient.restoreSession();
+                this.navigate(this.currentUser ? 'dashboard' : 'login');
+            },
+
+            navigate: function(view, params = {}) {
+                const container = document.getElementById('app');
+                const template = document.getElementById(`${view}-template`);
+                container.innerHTML = '';
+                container.appendChild(template.content.cloneNode(true));
+                
+                if (view === 'dashboard') this.initDashboard();
+                if (view === 'task-form') this.initTaskForm(params);
+            },
+
+            // --- AUTH ---
+            handleLogin: async function(e) {
+                e.preventDefault();
+                const resp = await TestClient.login(document.getElementById('loginEmail').value, '');
+                this.currentUser = resp.data.user;
+                localStorage.setItem('study_user', JSON.stringify(this.currentUser));
+                this.navigate('dashboard');
+            },
+
+            handleRegister: async function(e) {
+                e.preventDefault();
+                const resp = await TestClient.register(document.getElementById('regEmail').value, '', document.getElementById('regName').value);
+                this.currentUser = resp.data.user;
+                localStorage.setItem('study_user', JSON.stringify(this.currentUser));
+                this.navigate('dashboard');
+            },
+
+            handleLogout: function() {
+                TestClient.logout();
+                this.currentUser = null;
+                this.navigate('login');
+            },
+
+            // --- DASHBOARD ---
+            initDashboard: function() {
+                document.getElementById('userNameDisplay').textContent = this.currentUser.name;
+                this.loadTasks();
+            },
+
+            loadTasks: async function() {
+                const resp = await TestClient.getTasks();
+                this.tasks = resp.data.tasks;
+                this.renderTasks();
+                this.renderCalendar();
+                this.updateStats();
+            },
+
+            updateStats: function() {
+                const total = this.tasks.length;
+                const done = this.tasks.filter(t => t.completed).length;
+                document.getElementById('totalTasksCount').textContent = total;
+                document.getElementById('pendingTasksCount').textContent = total - done;
+                document.getElementById('completedTasksCount').textContent = done;
+            },
+
+            renderTasks: function() {
+                const container = document.getElementById('tasksContainer');
+                container.innerHTML = '';
+                this.tasks.forEach(t => {
+                    const card = document.createElement('div');
+                    card.className = `task-card ${t.completed ? 'completed' : ''}`;
+                    card.style.borderLeftColor = t.priority === 'high' ? 'var(--danger)' : (t.priority === 'medium' ? 'var(--warning)' : 'var(--success)');
+                    card.innerHTML = `
+                        <div style="display:flex; justify-content:space-between;">
+                            <span class="badge badge-${t.priority}">${t.priority}</span>
+                            <div>
+                                <button class="btn" onclick="app.initTaskForm({task:'${t.id}'}); app.navigate('task-form', {task: app.tasks.find(x=>x.id==='${t.id}')})"><i class="fa-solid fa-pen"></i></button>
+                                <button class="btn" onclick="app.handleDelete('${t.id}')"><i class="fa-solid fa-trash" style="color:var(--danger)"></i></button>
+                            </div>
+                        </div>
+                        <div style="color:var(--primary); font-size:0.8rem; font-weight:bold; margin:5px 0;">${t.subject}</div>
+                        <h3 style="margin-bottom:10px;">${t.title}</h3>
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span style="font-size:0.8rem; color:var(--text-muted)"><i class="fa-regular fa-calendar"></i> ${t.dueDate}</span>
+                            <input type="checkbox" ${t.completed ? 'checked' : ''} onchange="app.handleToggle('${t.id}', this.checked)">
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            },
+
+            // --- CALENDAR LOGIC ---
+            changeMonth: function(dir) {
+                this.currentDate.setMonth(this.currentDate.getMonth() + dir);
+                this.renderCalendar();
+            },
+
+            renderCalendar: function() {
+                const grid = document.getElementById('calendarGrid');
+                const title = document.getElementById('calendarMonthYear');
+                if (!grid || !title) return;
+
+                grid.innerHTML = '';
+                const year = this.currentDate.getFullYear();
+                const month = this.currentDate.getMonth();
+                title.textContent = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(this.currentDate);
+
+                // Weekday Labels
+                ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(day => {
+                    const div = document.createElement('div');
+                    div.className = 'calendar-day-label';
+                    div.textContent = day;
+                    grid.appendChild(div);
+                });
+
+                const firstDay = new Date(year, month, 1).getDay();
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const prevDays = new Date(year, month, 0).getDate();
+
+                // Empty cells for previous month
+                for (let i = firstDay; i > 0; i--) {
+                    this.createDayCell(prevDays - i + 1, true, grid);
+                }
+
+                // Actual days
+                for (let i = 1; i <= daysInMonth; i++) {
+                    this.createDayCell(i, false, grid, year, month);
+                }
+            },
+
+            createDayCell: function(num, isOther, grid, year, month) {
+                const cell = document.createElement('div');
+                cell.className = `day-cell ${isOther ? 'other-month' : ''}`;
+                
+                const today = new Date();
+                if (!isOther && num === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
+                    cell.classList.add('today');
+                }
+
+                cell.innerHTML = `<span class="day-number">${num}</span>`;
+                
+                if (!isOther) {
+                    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(num).padStart(2, '0')}`;
+                    const dayTasks = this.tasks.filter(t => t.dueDate === dateStr);
+                    
+                    if (dayTasks.length > 0) {
+                        const dotContainer = document.createElement('div');
+                        dotContainer.className = 'task-dot-container';
+                        dayTasks.forEach(task => {
+                            const dot = document.createElement('div');
+                            dot.className = `task-dot dot-${task.priority}`;
+                            dot.onclick = () => this.showTaskDetail(task);
+                            dotContainer.appendChild(dot);
+                        });
+                        cell.appendChild(dotContainer);
+                    }
+                }
+                grid.appendChild(cell);
+            },
+
+            // --- POPUP / MODAL ---
+            showTaskDetail: function(task) {
+                const temp = document.getElementById('task-detail-modal');
+                const clone = temp.content.cloneNode(true);
+                
+                clone.getElementById('modalTitle').textContent = task.title;
+                clone.getElementById('modalSubject').textContent = task.subject;
+                clone.getElementById('modalDesc').textContent = task.description || 'No additional details.';
+                clone.getElementById('modalDate').innerHTML = `<i class="fa-regular fa-calendar"></i> Due: ${task.dueDate}`;
+                
+                clone.getElementById('modalEditBtn').onclick = () => {
+                    this.closeModal();
+                    this.navigate('task-form', { task: task });
+                };
+
+                document.body.appendChild(clone);
+            },
+
+            closeModal: function() {
+                const modal = document.querySelector('.modal-overlay');
+                if (modal) modal.remove();
+            },
+
+            // --- TASK ACTIONS ---
+            initTaskForm: function(params) {
+                const task = params.task;
+                setTimeout(() => {
+                    if (task) {
+                        document.getElementById('formTitle').textContent = 'Edit Task';
+                        document.getElementById('taskId').value = task.id;
+                        document.getElementById('taskTitle').value = task.title;
+                        document.getElementById('taskSubject').value = task.subject;
+                        document.getElementById('taskPriority').value = task.priority;
+                        document.getElementById('taskDueDate').value = task.dueDate;
+                        document.getElementById('taskDescription').value = task.description;
+                    }
+                }, 0);
+            },
+
+            handleTaskSubmit: async function(e) {
+                e.preventDefault();
+                const id = document.getElementById('taskId').value;
+                const data = {
+                    title: document.getElementById('taskTitle').value,
+                    subject: document.getElementById('taskSubject').value,
+                    priority: document.getElementById('taskPriority').value,
+                    dueDate: document.getElementById('taskDueDate').value,
+                    description: document.getElementById('taskDescription').value,
+                    completed: false
+                };
+
+                if (id) await TestClient.updateTask(id, data);
+                else await TestClient.createTask(data);
+
+                this.navigate('dashboard');
+            },
+
+            handleToggle: async function(id, val) {
+                await TestClient.updateTask(id, { completed: val });
+                this.loadTasks();
+            },
+
+            handleDelete: async function(id) {
+                if(confirm('Delete this task?')) {
+                    await TestClient.deleteTask(id);
+                    this.loadTasks();
+                }
             }
-            // Navigate back on success
-            this.navigate('dashboard');
-        } catch (error) {
-            console.error('Save failed:', error);
-            document.getElementById('formError').textContent = error.message || 'Failed to save task.';
-            btn.disabled = false;
-            btn.textContent = 'Save Task';
-        }
-    }
-};
+        };
 
-// Start the app when the DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-    app.init();
-});
+        window.onload = () => app.init();
+
+document.addEventListener('DOMContentLoaded', () => app.init());
