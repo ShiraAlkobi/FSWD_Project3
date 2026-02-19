@@ -78,9 +78,21 @@
                     <i class="fa-solid fa-graduation-cap logo-icon" style="color: var(--primary); font-size: 1.5rem;"></i>
                     <span class="logo-text">StudyPlanner</span>
                 </div>
-                <div class="header-right" style="display: flex; align-items: center; gap: 15px;">
-                    <span id="userNameDisplay" style="font-weight: 600;">Student</span>
-                    <button onclick="app.handleLogout()" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.85rem;">Logout</button>
+                <div class="header-right">
+                    <!-- New Profile UI -->
+                    <div class="profile-container">
+                        <div class="profile-circle" id="profileCircle">S</div>
+                        <div class="profile-dropdown">
+                            <div class="dropdown-info">
+                                <div class="dropdown-name" id="profileName">Student Name</div>
+                                <div class="dropdown-email" id="profileEmail">student@email.com</div>
+                            </div>
+                            <div class="dropdown-divider"></div>
+                            <button onclick="app.handleLogout()" class="btn btn-danger btn-block" style="padding: 8px; font-size: 0.85rem; margin-top: 10px;">
+                                <i class="fa-solid fa-right-from-bracket"></i> Logout
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </header>
             
@@ -194,7 +206,7 @@
                 </div>
                 <div id="modalBadgeContainer" style="margin-bottom: 10px;"></div>
                 <div id="modalSubject" style="font-weight: 600; color: var(--primary); font-size: 0.9rem; margin-bottom: 5px;">Subject</div>
-                <p class="modal-desc" id="modalDesc">Description goes here...</p>
+                <p id="modalDesc" style="color: var(--text-muted); margin: 15px 0 25px 0; font-size: 1rem; min-height: 60px;">Description goes here...</p>
                 <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 15px;">
                     <span id="modalDate" style="font-size: 0.85rem; color: var(--text-muted);"><i class="fa-regular fa-calendar"></i> Due: </span>
                     <div style="display: flex; gap: 8px;">
@@ -205,7 +217,6 @@
             </div>
         </div>
     </template>
-
     <script src="js/app.js"></script>
 </body>
 </html>

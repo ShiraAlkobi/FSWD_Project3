@@ -1,5 +1,4 @@
-
-        :root {
+:root {
             --primary: #667eea;
             --primary-dark: #764ba2;
             --success: #10b981;
@@ -32,6 +31,8 @@
         .btn { cursor: pointer; border: none; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; font-size: 1rem; }
         .btn-primary { background: var(--primary); color: white; padding: 12px 24px; }
         .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); }
+        .btn-danger { background: var(--danger); color: white; padding: 12px 24px; }
+        .btn-danger:hover { background: #dc2626; }
         .btn-outline { background: transparent; border: 1px solid var(--border); padding: 8px 16px; color: var(--text-main); }
         .btn-outline:hover { background: #f9fafb; }
         .btn-block { width: 100%; }
@@ -41,6 +42,57 @@
         .logo-text { font-weight: 700; font-size: 1.25rem; color: var(--primary); margin-left: 8px; }
         .main-content { padding: 2rem 5%; max-width: 1200px; margin: 0 auto; }
         
+        /* New Profile Header UI */
+        .profile-container { position: relative; display: inline-block; }
+        .profile-circle { 
+            width: 42px; 
+            height: 42px; 
+            border-radius: 50%; 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); 
+            color: white; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-weight: 700; 
+            cursor: pointer; 
+            border: 2px solid var(--white); 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        .profile-circle:hover { transform: scale(1.05); }
+        
+        .profile-dropdown { 
+            position: absolute; 
+            top: 100%; 
+            right: 0; 
+            background: var(--white); 
+            border-radius: 12px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15); 
+            padding: 16px; 
+            width: 240px; 
+            display: none; 
+            margin-top: 12px; 
+            z-index: 1000; 
+            border: 1px solid var(--border);
+            text-align: left;
+        }
+        /* Triangle indicator for dropdown */
+        .profile-dropdown::after {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            right: 14px;
+            border: 8px solid transparent;
+            border-bottom-color: var(--white);
+        }
+
+        .profile-container:hover .profile-dropdown { display: block; animation: fadeIn 0.2s ease-out; }
+        
+        .dropdown-info { margin-bottom: 12px; }
+        .dropdown-name { font-weight: 700; color: var(--text-main); font-size: 1rem; line-height: 1.2; }
+        .dropdown-email { font-size: 0.8rem; color: var(--text-muted); word-break: break-all; }
+        .dropdown-divider { height: 1px; background: var(--border); margin: 8px 0; }
+
         /* Toolbar */
         .toolbar { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; align-items: center; }
         .search-bar { flex: 1; position: relative; min-width: 250px; }
@@ -90,19 +142,16 @@
         .modal-card { background: white; padding: 28px; border-radius: 16px; width: 100%; max-width: 450px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
         .modal-title { font-size: 1.4rem; font-weight: 700; }
-        .modal-desc { color: var(--text-muted); margin: 15px 0 25px 0; font-size: 1rem; min-height: 60px; }
         
         .form-card { background: white; padding: 2.5rem; border-radius: 16px; width: 100%; max-width: 550px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
         .form-group { margin-bottom: 1.25rem; }
         .form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.9rem; color: var(--text-main); }
         .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; font-family: inherit; }
-        .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--primary); }
 
         .custom-checkbox { width: 20px; height: 20px; cursor: pointer; accent-color: var(--primary); }
 
         @media (max-width: 768px) {
             .stats-container { grid-template-columns: 1fr; }
             .toolbar { flex-direction: column; align-items: stretch; }
-            .calendar-day-label { font-size: 0.6rem; }
             .day-cell { min-height: 60px; }
         }
