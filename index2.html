@@ -12,13 +12,14 @@
 
     <div id="app"></div>
 
-    <!-- Templates -->
+    <!-- Auth Templates -->
     <template id="login-template">
         <div class="auth-wrapper">
             <div class="auth-card fade-in">
                 <div class="brand-header">
                     <i class="fa-solid fa-graduation-cap brand-icon"></i>
                     <h1>StudyPlanner</h1>
+                    <p style="color: var(--text-muted)">Welcome back!</p>
                 </div>
                 <form onsubmit="app.handleLogin(event)">
                     <div class="input-group">
@@ -29,8 +30,11 @@
                         <i class="fa-solid fa-lock input-icon"></i>
                         <input type="password" id="loginPassword" required placeholder="Password">
                     </div>
+                    <div id="loginError" style="color: var(--danger); font-size: 0.85rem; margin-bottom: 10px; text-align: center; display: none;"></div>
                     <button type="submit" class="btn btn-primary btn-block">Login</button>
-                    <p style="text-align:center; margin-top:1rem;">New? <a href="#" onclick="app.navigate('register')">Register</a></p>
+                    <p style="text-align:center; margin-top:1.5rem; font-size: 0.9rem;">
+                        New here? <a href="#" onclick="app.navigate('register')" style="color: var(--primary); text-decoration: none; font-weight: 600;">Create account</a>
+                    </p>
                 </form>
             </div>
         </div>
@@ -40,30 +44,43 @@
         <div class="auth-wrapper">
             <div class="auth-card fade-in">
                 <div class="brand-header">
-                    <i class="fa-solid fa-graduation-cap brand-icon"></i>
-                    <h1>Create Account</h1>
+                    <i class="fa-solid fa-user-plus brand-icon"></i>
+                    <h1>Join Us</h1>
+                    <p style="color: var(--text-muted)">Start organizing your studies</p>
                 </div>
                 <form onsubmit="app.handleRegister(event)">
-                    <div class="input-group"><input type="text" id="regName" required placeholder="Full Name"></div>
-                    <div class="input-group"><input type="email" id="regEmail" required placeholder="Email Address"></div>
-                    <div class="input-group"><input type="password" id="regPassword" required placeholder="Password"></div>
+                    <div class="input-group">
+                        <i class="fa-solid fa-user input-icon"></i>
+                        <input type="text" id="regName" required placeholder="Full Name">
+                    </div>
+                    <div class="input-group">
+                        <i class="fa-solid fa-envelope input-icon"></i>
+                        <input type="email" id="regEmail" required placeholder="Email Address">
+                    </div>
+                    <div class="input-group">
+                        <i class="fa-solid fa-lock input-icon"></i>
+                        <input type="password" id="regPassword" required placeholder="Password">
+                    </div>
                     <button type="submit" class="btn btn-primary btn-block">Sign Up</button>
-                    <p style="text-align:center; margin-top:1rem;"><a href="#" onclick="app.navigate('login')">Back to Login</a></p>
+                    <p style="text-align:center; margin-top:1.5rem; font-size: 0.9rem;">
+                        Already have an account? <a href="#" onclick="app.navigate('login')" style="color: var(--primary); text-decoration: none; font-weight: 600;">Back to Login</a>
+                    </p>
                 </form>
             </div>
         </div>
     </template>
 
+    <!-- Dashboard Template -->
     <template id="dashboard-template">
         <div class="dashboard-layout fade-in">
             <header class="app-header">
                 <div class="header-left">
-                    <i class="fa-solid fa-graduation-cap logo-icon"></i>
+                    <i class="fa-solid fa-graduation-cap logo-icon" style="color: var(--primary); font-size: 1.5rem;"></i>
                     <span class="logo-text">StudyPlanner</span>
                 </div>
-                <div class="header-right">
-                    <span id="userNameDisplay">Student</span>
-                    <button onclick="app.handleLogout()" class="btn btn-primary" style="padding: 5px 10px; font-size: 0.8rem;">Logout</button>
+                <div class="header-right" style="display: flex; align-items: center; gap: 15px;">
+                    <span id="userNameDisplay" style="font-weight: 600;">Student</span>
+                    <button onclick="app.handleLogout()" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.85rem;">Logout</button>
                 </div>
             </header>
             
@@ -71,35 +88,43 @@
                 <div class="toolbar">
                     <div class="search-bar">
                         <i class="fa-solid fa-magnifying-glass"></i>
-                        <input type="text" id="searchInput" placeholder="Search tasks..." onkeyup="app.handleSearch(event)">
+                        <input type="text" id="searchInput" placeholder="Search by title or subject..." oninput="app.handleSearch(event)">
                     </div>
-                    <select id="filterPriority" class="filter-select" onchange="app.handleFilter(event)">
-                        <option value="">All Priorities</option>
-                        <option value="high">High</option>
-                        <option value="medium">Medium</option>
-                        <option value="low">Low</option>
+                    <select id="filterPriority" class="filter-select" onchange="app.handleFilter()">
+                        <option value="all">All Priorities</option>
+                        <option value="high">High Priority</option>
+                        <option value="medium">Medium Priority</option>
+                        <option value="low">Low Priority</option>
                     </select>
                     <button class="btn btn-primary" onclick="app.navigate('task-form')">
-                        <i class="fa-solid fa-plus"></i> Add Task
+                        <i class="fa-solid fa-plus"></i> New Task
                     </button>
                 </div>
 
-                <!-- NEW CALENDAR SECTION -->
+                <!-- Calendar -->
                 <div class="calendar-section">
                     <div class="calendar-header">
-                        <button onclick="app.changeMonth(-1)" class="btn"><i class="fa-solid fa-chevron-left"></i></button>
-                        <h2 id="calendarMonthYear" style="color: var(--primary);">Month Year</h2>
-                        <button onclick="app.changeMonth(1)" class="btn"><i class="fa-solid fa-chevron-right"></i></button>
+                        <button onclick="app.changeMonth(-1)" class="btn btn-outline" title="Previous Month"><i class="fa-solid fa-chevron-left"></i></button>
+                        <h2 id="calendarMonthYear" style="color: var(--text-main); font-weight: 700;">Month Year</h2>
+                        <button onclick="app.changeMonth(1)" class="btn btn-outline" title="Next Month"><i class="fa-solid fa-chevron-right"></i></button>
                     </div>
-                    <div id="calendarGrid" class="calendar-grid">
-                        <!-- Days and tasks injected here -->
-                    </div>
+                    <div id="calendarGrid" class="calendar-grid"></div>
                 </div>
 
+                <!-- Stats -->
                 <div class="stats-container">
-                    <div class="stat-card"><div class="stat-value" id="totalTasksCount">0</div><div>Total</div></div>
-                    <div class="stat-card"><div class="stat-value" id="pendingTasksCount" style="color: var(--warning)">0</div><div>Pending</div></div>
-                    <div class="stat-card"><div class="stat-value" id="completedTasksCount" style="color: var(--success)">0</div><div>Done</div></div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalTasksCount">0</div>
+                        <div style="color: var(--text-muted); font-size: 0.85rem;">Total Tasks</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="pendingTasksCount" style="color: var(--warning)">0</div>
+                        <div style="color: var(--text-muted); font-size: 0.85rem;">Pending</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="completedTasksCount" style="color: var(--success)">0</div>
+                        <div style="color: var(--text-muted); font-size: 0.85rem;">Completed</div>
+                    </div>
                 </div>
 
                 <div id="tasksContainer" class="tasks-grid"></div>
@@ -107,35 +132,52 @@
         </div>
     </template>
 
+    <!-- Task Form Template -->
     <template id="task-form-template">
         <div class="auth-wrapper">
             <div class="form-card fade-in">
-                <h2 id="formTitle" style="margin-bottom: 1.5rem;">Add Task</h2>
+                <h2 id="formTitle" style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px;">
+                    <i class="fa-solid fa-calendar-check" style="color: var(--primary)"></i>
+                    <span>Create New Task</span>
+                </h2>
                 <form onsubmit="app.handleTaskSubmit(event)">
                     <input type="hidden" id="taskId">
-                    <div class="form-group"><label>Title</label><input type="text" id="taskTitle" required></div>
                     <div class="form-group">
-                        <label>Subject</label>
-                        <select id="taskSubject" required>
-                            <option value="Mathematics">Mathematics</option>
-                            <option value="Physics">Physics</option>
-                            <option value="Computer Science">Computer Science</option>
-                            <option value="Literature">Literature</option>
-                        </select>
+                        <label>Task Title</label>
+                        <input type="text" id="taskTitle" required placeholder="e.g., Final Exam Review">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="form-group">
+                            <label>Subject</label>
+                            <select id="taskSubject" required>
+                                <option value="Mathematics">Mathematics</option>
+                                <option value="Physics">Physics</option>
+                                <option value="Computer Science">Computer Science</option>
+                                <option value="Literature">Literature</option>
+                                <option value="History">History</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Priority Level</label>
+                            <select id="taskPriority">
+                                <option value="low">Low</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label>Priority</label>
-                        <select id="taskPriority">
-                            <option value="low">Low</option>
-                            <option value="medium" selected>Medium</option>
-                            <option value="high">High</option>
-                        </select>
+                        <label>Due Date</label>
+                        <input type="date" id="taskDueDate" required>
                     </div>
-                    <div class="form-group"><label>Due Date</label><input type="date" id="taskDueDate" required></div>
-                    <div class="form-group"><label>Description</label><textarea id="taskDescription" rows="3"></textarea></div>
-                    <div style="display:flex; gap:10px;">
-                        <button type="submit" class="btn btn-primary btn-block">Save</button>
-                        <button type="button" class="btn btn-block" onclick="app.navigate('dashboard')">Cancel</button>
+                    <div class="form-group">
+                        <label>Description (Optional)</label>
+                        <textarea id="taskDescription" rows="3" placeholder="Add specific details or sub-tasks..."></textarea>
+                    </div>
+                    <div style="display:flex; gap:12px; margin-top: 10px;">
+                        <button type="submit" class="btn btn-primary btn-block">Save Task</button>
+                        <button type="button" class="btn btn-outline btn-block" onclick="app.navigate('dashboard')">Cancel</button>
                     </div>
                 </form>
             </div>
@@ -144,17 +186,21 @@
 
     <!-- Task Detail Modal Template -->
     <template id="task-detail-modal">
-        <div class="modal-overlay" onclick="app.closeModal()">
+        <div class="modal-overlay" id="modalOverlay" onclick="app.closeModal()">
             <div class="modal-card fade-in" onclick="event.stopPropagation()">
                 <div class="modal-header">
                     <div class="modal-title" id="modalTitle">Task Name</div>
-                    <button class="btn" onclick="app.closeModal()"><i class="fa-solid fa-xmark"></i></button>
+                    <button class="btn btn-outline" style="padding: 5px; border:none;" onclick="app.closeModal()"><i class="fa-solid fa-xmark"></i></button>
                 </div>
-                <div class="modal-subject" id="modalSubject">Subject</div>
+                <div id="modalBadgeContainer" style="margin-bottom: 10px;"></div>
+                <div id="modalSubject" style="font-weight: 600; color: var(--primary); font-size: 0.9rem; margin-bottom: 5px;">Subject</div>
                 <p class="modal-desc" id="modalDesc">Description goes here...</p>
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span id="modalDate" style="font-size: 0.8rem; color: var(--text-muted);">Date</span>
-                    <button class="btn btn-primary" id="modalEditBtn" style="padding: 5px 15px;">Edit Task</button>
+                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 15px;">
+                    <span id="modalDate" style="font-size: 0.85rem; color: var(--text-muted);"><i class="fa-regular fa-calendar"></i> Due: </span>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-outline" id="modalDeleteBtn" title="Delete"><i class="fa-solid fa-trash" style="color: var(--danger)"></i></button>
+                        <button class="btn btn-primary" id="modalEditBtn" style="padding: 6px 15px; font-size: 0.85rem;">Edit</button>
+                    </div>
                 </div>
             </div>
         </div>
