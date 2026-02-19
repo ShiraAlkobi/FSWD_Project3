@@ -1,0 +1,88 @@
+/* ═══════════════════════════════════════════
+   Task Form – create / edit task template
+   ═══════════════════════════════════════════ */
+
+.form-card {
+    background: white;
+    padding: 2.5rem;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 550px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.form-title {
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.form-title-icon {
+    color: var(--primary);
+}
+
+.form-group {
+    margin-bottom: 1.25rem;
+}
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-main);
+}
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: inherit;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+/* ── Subject select + add ── */
+.subject-select-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.subject-select-row select { flex: 1; }
+.subject-add-toggle {
+    padding: 10px 12px;
+    flex-shrink: 0;
+    font-size: 0.85rem;
+}
+.add-subject-row {
+    display: none;
+    gap: 8px;
+    margin-top: 8px;
+}
+.add-subject-row.show {
+    display: flex;
+}
+.add-subject-row input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+.add-subject-btn {
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}

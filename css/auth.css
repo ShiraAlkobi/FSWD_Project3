@@ -1,0 +1,85 @@
+/* ═══════════════════════════════════════════
+   Auth – Login & Register templates
+   ═══════════════════════════════════════════ */
+
+.auth-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    padding: 20px;
+}
+
+.auth-card {
+    background: var(--white);
+    padding: 40px;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+.brand-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+.brand-icon {
+    font-size: 3rem;
+    color: var(--primary);
+    margin-bottom: 10px;
+}
+.brand-subtitle {
+    color: var(--text-muted);
+}
+
+/* ── Input groups ── */
+.input-group {
+    position: relative;
+    margin-bottom: 20px;
+}
+.input-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    z-index: 10;
+}
+.input-group input {
+    width: 100%;
+    padding: 12px 12px 12px 40px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border 0.2s;
+}
+.input-group input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+/* ── Login error ── */
+#loginError,
+#regError {
+    color: var(--danger);
+    font-size: 0.85rem;
+    margin-bottom: 10px;
+    text-align: center;
+    display: none;
+}
+
+/* ── Auth footer link ── */
+.auth-footer {
+    text-align: center;
+    margin-top: 1.5rem;
+    font-size: 0.9rem;
+}
+.auth-footer a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+}
+.auth-footer a:hover {
+    text-decoration: underline;
+}

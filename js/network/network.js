@@ -73,7 +73,7 @@ const Network = {
                     status: CONFIG.STATUS.NETWORK_ERROR,
                     message: CONFIG.MESSAGES.NETWORK_DROPPED
                 });
-            }, Utils.randomDelay(500, 1000));
+            }, Utils.randomDelay(CONFIG.NETWORK.MIN_DELAY, CONFIG.NETWORK.MAX_DELAY));
             return;
         }
         
@@ -87,7 +87,7 @@ const Network = {
             setTimeout(() => {
                 onError({
                     status: CONFIG.STATUS.NOT_FOUND,
-                    message: 'Server not found'
+                    message: CONFIG.MESSAGES.SERVER_NOT_FOUND
                 });
             }, 100);
             return;
@@ -128,7 +128,7 @@ const Network = {
                     status: CONFIG.STATUS.NETWORK_ERROR,
                     message: CONFIG.MESSAGES.NETWORK_DROPPED
                 });
-            }, Utils.randomDelay(500, 1000));
+            }, Utils.randomDelay(CONFIG.NETWORK.MIN_DELAY, CONFIG.NETWORK.MAX_DELAY));
             return;
         }
         

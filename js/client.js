@@ -1,90 +1,81 @@
 /**
- * Simple Client for Testing the Backend System
- * Authentication is based on userId
+ * Client Network Utilities
+ * Provides a reusable sendRequest helper for making requests through the simulated network.
+ * Used by both app.js (the real client) and TestClient (for the test page).
  */
+const ClientAPI = {
+    /**
+     * Send a request through the simulated network stack.
+     * @param {string} method - HTTP method (GET, POST, PUT, DELETE)
+     * @param {string} url - API endpoint URL
+     * @param {object} options - { headers: {}, body: string|null }
+     * @returns {Promise} resolves with parsed response, rejects on error/failure
+     */
+    sendRequest: function(method, url, options = {}) {
+        return new Promise((resolve, reject) => {
+            const xhr = new FXMLHttpRequest();
+            xhr.open(method, url);
 
+            if (options.headers) {
+                Object.entries(options.headers).forEach(([key, val]) => {
+                    xhr.setRequestHeader(key, val);
+                });
+            }
+
+            xhr.onload = () => {
+                const response = Utils.parseJSON(xhr.responseText);
+                if ((xhr.status === CONFIG.STATUS.OK || xhr.status === CONFIG.STATUS.CREATED) && response.success) {
+                    resolve(response);
+                } else {
+                    reject(response);
+                }
+            };
+
+            xhr.onerror = () => {
+                const response = Utils.parseJSON(xhr.responseText);
+                reject(response);
+            };
+
+            xhr.send(options.body || null);
+        });
+    }
+};
+
+// ============================================================
+// TestClient — kept for backwards compatibility with index.html
+// ============================================================
 const TestClient = {
     currentUserId: null,
     currentUser: null,
     
-    /**
-     * Check if user is logged in
-     */
     isLoggedIn: function() {
         return this.currentUserId !== null;
     },
 
-    /**
-     * Register a new user
-     */
     register: function(email, password, name) {
-        return new Promise((resolve, reject) => {
-            const xhr = new FXMLHttpRequest();
-            
-            xhr.open('POST', CONFIG.API.REGISTER);
-            xhr.setRequestHeader('Content-Type', 'application/json');
-            
-            xhr.onload = () => {
-                const response = Utils.parseJSON(xhr.responseText);
-                if (xhr.status === CONFIG.STATUS.CREATED && response.success) {
-                    this.currentUserId = response.data.user.id;
-                    this.currentUser = response.data.user;
-                    console.log('Registration successful:', response);
-                    resolve(response);
-                } else {
-                    console.log('Registration failed:', response);
-                    reject(response);
-                }
-            };
-            
-            xhr.onerror = () => {
-                const response = Utils.parseJSON(xhr.responseText);
-                console.log('Registration error:', response);
-                reject(response);
-            };
-            
-            const requestBody = JSON.stringify({ email, password, name });
-            xhr.send(requestBody);
+        return ClientAPI.sendRequest('POST', CONFIG.API.REGISTER, {
+            headers: { [CONFIG.HEADERS.CONTENT_TYPE]: CONFIG.HEADERS.CONTENT_TYPE_JSON },
+            body: JSON.stringify({ email, password, name })
+        }).then(response => {
+            this.currentUserId = response.data.user.id;
+            this.currentUser = response.data.user;
+            console.log('Registration successful:', response);
+            return response;
         });
     },
     
-    /**
-     * Login existing user
-     */
     login: function(email, password) {
-        return new Promise((resolve, reject) => {
-            const xhr = new FXMLHttpRequest();
-            
-            xhr.open('POST', CONFIG.API.LOGIN);
-            xhr.setRequestHeader('Content-Type', 'application/json');
-            
-            xhr.onload = () => {
-                const response = Utils.parseJSON(xhr.responseText);
-                if (xhr.status === CONFIG.STATUS.OK && response.success) {
-                    this.currentUserId = response.data.user.id;
-                    this.currentUser = response.data.user;
-                    console.log('Login successful:', response);
-                    resolve(response);
-                } else {
-                    console.log('Login failed:', response);
-                    reject(response);
-                }
-            };
-            
-            xhr.onerror = () => {
-                const response = Utils.parseJSON(xhr.responseText);
-                console.log('Login error:', response);
-                reject(response);
-            };
-            
-            const requestBody = JSON.stringify({ email, password });
-            xhr.send(requestBody);
+        return ClientAPI.sendRequest('POST', CONFIG.API.LOGIN, {
+            headers: { [CONFIG.HEADERS.CONTENT_TYPE]: CONFIG.HEADERS.CONTENT_TYPE_JSON },
+            body: JSON.stringify({ email, password })
+        }).then(response => {
+            this.currentUserId = response.data.user.id;
+            this.currentUser = response.data.user;
+            console.log('Login successful:', response);
+            return response;
         });
     },
     
-    /**
-     * Logout - clear user data and cookies
-     */
     logout: function() {
         this.currentUserId = null;
         this.currentUser = null;
@@ -92,17 +83,11 @@ const TestClient = {
         console.log('Logged out, cookies cleared');
     },
 
-    /**
-     * Restore session from cookies (call on page load)
-     */
     restoreSession: function() {
         if (typeof CookieManager === 'undefined') return null;
-        
         const userId = CookieManager.get(COOKIE_NAMES.USER_ID);
         const email = CookieManager.get(COOKIE_NAMES.USER_EMAIL);
-        
         if (userId && email) {
-            // Verify user still exists in DB
             const user = UsersDB.getUserById(userId);
             if (user) {
                 this.currentUserId = user.id;
@@ -114,198 +99,48 @@ const TestClient = {
         return null;
     },
 
-    /**
-     * Get all tasks
-     */
     getTasks: function(filters = {}) {
-        return new Promise((resolve, reject) => {
-            if (!this.isLoggedIn()) {
-                reject({ success: false, message: 'Not authenticated' });
-                return;
-            }
-            
-            let url = CONFIG.API.TASKS;
-            
-            // Add query parameters if filters provided
-            const params = new URLSearchParams(filters);
-            if (params.toString()) {
-                url += '?' + params.toString();
-            }
-            
-            const xhr = new FXMLHttpRequest();
-            
-            xhr.open('GET', url);
-            xhr.setRequestHeader('UserId', this.currentUserId);
-            
-            xhr.onload = () => {
-                const response = Utils.parseJSON(xhr.responseText);
-                if (xhr.status === CONFIG.STATUS.OK && response.success) {
-                    console.log('Tasks retrieved:', response);
-                    resolve(response);
-                } else {
-                    console.log('Get tasks failed:', response);
-                    reject(response);
-                }
-            };
-            
-            xhr.onerror = () => {
-                const response = Utils.parseJSON(xhr.responseText);
-                console.log('Get tasks error:', response);
-                reject(response);
-            };
-            
-            xhr.send();
+        if (!this.isLoggedIn()) return Promise.reject({ success: false, message: CONFIG.MESSAGES.UNAUTHORIZED_ACCESS });
+        let url = CONFIG.API.TASKS;
+        const params = new URLSearchParams(filters);
+        if (params.toString()) url += '?' + params.toString();
+        return ClientAPI.sendRequest('GET', url, {
+            headers: { [CONFIG.HEADERS.USER_ID]: this.currentUserId }
         });
     },
     
-    /**
-     * Get task by ID
-     */
     getTaskById: function(taskId) {
-        return new Promise((resolve, reject) => {
-            if (!this.isLoggedIn()) {
-                reject({ success: false, message: 'Not authenticated' });
-                return;
-            }
-            
-            const xhr = new FXMLHttpRequest();
-            
-            xhr.open('GET', CONFIG.API.TASK_BY_ID(taskId));
-            xhr.setRequestHeader('UserId', this.currentUserId);
-            
-            xhr.onload = () => {
-                const response = Utils.parseJSON(xhr.responseText);
-                if (xhr.status === CONFIG.STATUS.OK && response.success) {
-                    console.log('Task retrieved:', response);
-                    resolve(response);
-                } else {
-                    console.log('Get task failed:', response);
-                    reject(response);
-                }
-            };
-            
-            xhr.onerror = () => {
-                const response = Utils.parseJSON(xhr.responseText);
-                console.log('Get task error:', response);
-                reject(response);
-            };
-            
-            xhr.send();
+        if (!this.isLoggedIn()) return Promise.reject({ success: false, message: CONFIG.MESSAGES.UNAUTHORIZED_ACCESS });
+        return ClientAPI.sendRequest('GET', CONFIG.API.TASK_BY_ID(taskId), {
+            headers: { [CONFIG.HEADERS.USER_ID]: this.currentUserId }
         });
     },
     
-    /**
-     * Create new task
-     */
     createTask: function(taskData) {
-        return new Promise((resolve, reject) => {
-            if (!this.isLoggedIn()) {
-                reject({ success: false, message: 'Not authenticated' });
-                return;
-            }
-            
-            const xhr = new FXMLHttpRequest();
-            
-            xhr.open('POST', CONFIG.API.TASKS);
-            xhr.setRequestHeader('Content-Type', 'application/json');
-            xhr.setRequestHeader('UserId', this.currentUserId);
-            
-            xhr.onload = () => {
-                const response = Utils.parseJSON(xhr.responseText);
-                if (xhr.status === CONFIG.STATUS.CREATED && response.success) {
-                    console.log('Task created:', response);
-                    resolve(response);
-                } else {
-                    console.log('Create task failed:', response);
-                    reject(response);
-                }
-            };
-            
-            xhr.onerror = () => {
-                const response = Utils.parseJSON(xhr.responseText);
-                console.log('Create task error:', response);
-                reject(response);
-            };
-            
-            xhr.send(JSON.stringify(taskData));
+        if (!this.isLoggedIn()) return Promise.reject({ success: false, message: CONFIG.MESSAGES.UNAUTHORIZED_ACCESS });
+        return ClientAPI.sendRequest('POST', CONFIG.API.TASKS, {
+            headers: { [CONFIG.HEADERS.CONTENT_TYPE]: CONFIG.HEADERS.CONTENT_TYPE_JSON, [CONFIG.HEADERS.USER_ID]: this.currentUserId },
+            body: JSON.stringify(taskData)
         });
     },
     
-    /**
-     * Update task
-     */
     updateTask: function(taskId, updates) {
-        return new Promise((resolve, reject) => {
-            if (!this.isLoggedIn()) {
-                reject({ success: false, message: 'Not authenticated' });
-                return;
-            }
-            
-            const xhr = new FXMLHttpRequest();
-            
-            xhr.open('PUT', CONFIG.API.TASK_BY_ID(taskId));
-            xhr.setRequestHeader('Content-Type', 'application/json');
-            xhr.setRequestHeader('UserId', this.currentUserId);
-            
-            xhr.onload = () => {
-                const response = Utils.parseJSON(xhr.responseText);
-                if (xhr.status === CONFIG.STATUS.OK && response.success) {
-                    console.log('Task updated:', response);
-                    resolve(response);
-                } else {
-                    console.log('Update task failed:', response);
-                    reject(response);
-                }
-            };
-            
-            xhr.onerror = () => {
-                const response = Utils.parseJSON(xhr.responseText);
-                console.log('Update task error:', response);
-                reject(response);
-            };
-            
-            xhr.send(JSON.stringify(updates));
+        if (!this.isLoggedIn()) return Promise.reject({ success: false, message: CONFIG.MESSAGES.UNAUTHORIZED_ACCESS });
+        return ClientAPI.sendRequest('PUT', CONFIG.API.TASK_BY_ID(taskId), {
+            headers: { [CONFIG.HEADERS.CONTENT_TYPE]: CONFIG.HEADERS.CONTENT_TYPE_JSON, [CONFIG.HEADERS.USER_ID]: this.currentUserId },
+            body: JSON.stringify(updates)
         });
     },
     
-    /**
-     * Delete task
-     */
     deleteTask: function(taskId) {
-        return new Promise((resolve, reject) => {
-            if (!this.isLoggedIn()) {
-                reject({ success: false, message: 'Not authenticated' });
-                return;
-            }
-            
-            const xhr = new FXMLHttpRequest();
-            
-            xhr.open('DELETE', CONFIG.API.TASK_BY_ID(taskId));
-            xhr.setRequestHeader('UserId', this.currentUserId);
-            
-            xhr.onload = () => {
-                const response = Utils.parseJSON(xhr.responseText);
-                if (xhr.status === CONFIG.STATUS.OK && response.success) {
-                    console.log('Task deleted:', response);
-                    resolve(response);
-                } else {
-                    console.log('Delete task failed:', response);
-                    reject(response);
-                }
-            };
-            
-            xhr.onerror = () => {
-                const response = Utils.parseJSON(xhr.responseText);
-                console.log('Delete task error:', response);
-                reject(response);
-            };
-            
-            xhr.send();
+        if (!this.isLoggedIn()) return Promise.reject({ success: false, message: CONFIG.MESSAGES.UNAUTHORIZED_ACCESS });
+        return ClientAPI.sendRequest('DELETE', CONFIG.API.TASK_BY_ID(taskId), {
+            headers: { [CONFIG.HEADERS.USER_ID]: this.currentUserId }
         });
     }
 };
 
-// Make TestClient globally available
 if (typeof window !== 'undefined') {
+    window.ClientAPI = ClientAPI;
     window.TestClient = TestClient;
 }

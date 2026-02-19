@@ -26,7 +26,8 @@ const CONFIG = {
     STORAGE: {
         USERS_KEY: 'study_planner_users',
         TASKS_KEY: 'study_planner_tasks',
-        CURRENT_USER_KEY: 'study_planner_current_user'
+        CURRENT_USER_KEY: 'study_planner_current_user',
+        SUBJECTS_KEY: 'study_planner_subjects'
     },
     
     // HTTP Status Codes
@@ -52,6 +53,13 @@ const CONFIG = {
         500: 'Internal Server Error'
     },
     
+    // Header Names
+    HEADERS: {
+        CONTENT_TYPE: 'Content-Type',
+        CONTENT_TYPE_JSON: 'application/json',
+        USER_ID: 'UserId'
+    },
+
     // Response Messages
     MESSAGES: {
         // Success
@@ -69,7 +77,8 @@ const CONFIG = {
         UNAUTHORIZED_ACCESS: 'Unauthorized access',
         MISSING_FIELDS: 'Missing required fields',
         NETWORK_TIMEOUT: 'Network request timed out',
-        NETWORK_DROPPED: 'Network connection lost'
+        NETWORK_DROPPED: 'Network connection lost',
+        SERVER_NOT_FOUND: 'Server not found'
     }
 };
 

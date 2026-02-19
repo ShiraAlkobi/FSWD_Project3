@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Study Planner</title>
+    <title>Study Flow – Smart Study Planner</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
@@ -18,8 +18,8 @@
             <div class="auth-card fade-in">
                 <div class="brand-header">
                     <i class="fa-solid fa-graduation-cap brand-icon"></i>
-                    <h1>StudyPlanner</h1>
-                    <p style="color: var(--text-muted)">Welcome back!</p>
+                    <h1>Study Flow</h1>
+                    <p class="brand-subtitle">Welcome back!</p>
                 </div>
                 <form onsubmit="app.handleLogin(event)">
                     <div class="input-group">
@@ -28,12 +28,12 @@
                     </div>
                     <div class="input-group">
                         <i class="fa-solid fa-lock input-icon"></i>
-                        <input type="password" id="loginPassword" required placeholder="Password">
+                        <input type="password" id="loginPassword" required minlength="6" placeholder="Password">
                     </div>
-                    <div id="loginError" style="color: var(--danger); font-size: 0.85rem; margin-bottom: 10px; text-align: center; display: none;"></div>
+                    <div id="loginError"></div>
                     <button type="submit" class="btn btn-primary btn-block">Login</button>
-                    <p style="text-align:center; margin-top:1.5rem; font-size: 0.9rem;">
-                        New here? <a href="#" onclick="app.navigate('register')" style="color: var(--primary); text-decoration: none; font-weight: 600;">Create account</a>
+                    <p class="auth-footer">
+                        New here? <a href="#" onclick="app.navigate('register')">Create account</a>
                     </p>
                 </form>
             </div>
@@ -45,13 +45,13 @@
             <div class="auth-card fade-in">
                 <div class="brand-header">
                     <i class="fa-solid fa-user-plus brand-icon"></i>
-                    <h1>Join Us</h1>
-                    <p style="color: var(--text-muted)">Start organizing your studies</p>
+                    <h1>Join Study Flow</h1>
+                    <p class="brand-subtitle">Start organizing your studies</p>
                 </div>
                 <form onsubmit="app.handleRegister(event)">
                     <div class="input-group">
                         <i class="fa-solid fa-user input-icon"></i>
-                        <input type="text" id="regName" required placeholder="Full Name">
+                        <input type="text" id="regName" required minlength="2" maxlength="50" pattern="[A-Za-z\s]{2,50}" placeholder="Full Name">
                     </div>
                     <div class="input-group">
                         <i class="fa-solid fa-envelope input-icon"></i>
@@ -59,11 +59,16 @@
                     </div>
                     <div class="input-group">
                         <i class="fa-solid fa-lock input-icon"></i>
-                        <input type="password" id="regPassword" required placeholder="Password">
+                        <input type="password" id="regPassword" required minlength="6" maxlength="64" placeholder="Password" oninput="app.checkPasswordMatch()">
                     </div>
+                    <div class="input-group">
+                        <i class="fa-solid fa-lock input-icon"></i>
+                        <input type="password" id="regConfirmPassword" required minlength="6" maxlength="64" placeholder="Confirm Password" oninput="app.checkPasswordMatch()">
+                    </div>
+                    <div id="regError"></div>
                     <button type="submit" class="btn btn-primary btn-block">Sign Up</button>
-                    <p style="text-align:center; margin-top:1.5rem; font-size: 0.9rem;">
-                        Already have an account? <a href="#" onclick="app.navigate('login')" style="color: var(--primary); text-decoration: none; font-weight: 600;">Back to Login</a>
+                    <p class="auth-footer">
+                        Already have an account? <a href="#" onclick="app.navigate('login')">Back to Login</a>
                     </p>
                 </form>
             </div>
@@ -75,11 +80,10 @@
         <div class="dashboard-layout fade-in">
             <header class="app-header">
                 <div class="header-left">
-                    <i class="fa-solid fa-graduation-cap logo-icon" style="color: var(--primary); font-size: 1.5rem;"></i>
-                    <span class="logo-text">StudyPlanner</span>
+                    <i class="fa-solid fa-graduation-cap logo-icon"></i>
+                    <span class="logo-text">Study Flow</span>
                 </div>
                 <div class="header-right">
-                    <!-- New Profile UI -->
                     <div class="profile-container">
                         <div class="profile-circle" id="profileCircle">S</div>
                         <div class="profile-dropdown">
@@ -88,7 +92,7 @@
                                 <div class="dropdown-email" id="profileEmail">student@email.com</div>
                             </div>
                             <div class="dropdown-divider"></div>
-                            <button onclick="app.handleLogout()" class="btn btn-danger btn-block" style="padding: 8px; font-size: 0.85rem; margin-top: 10px;">
+                            <button onclick="app.handleLogout()" class="btn btn-danger btn-block logout-btn">
                                 <i class="fa-solid fa-right-from-bracket"></i> Logout
                             </button>
                         </div>
@@ -113,29 +117,37 @@
                     </button>
                 </div>
 
-                <!-- Calendar -->
-                <div class="calendar-section">
-                    <div class="calendar-header">
-                        <button onclick="app.changeMonth(-1)" class="btn btn-outline" title="Previous Month"><i class="fa-solid fa-chevron-left"></i></button>
-                        <h2 id="calendarMonthYear" style="color: var(--text-main); font-weight: 700;">Month Year</h2>
-                        <button onclick="app.changeMonth(1)" class="btn btn-outline" title="Next Month"><i class="fa-solid fa-chevron-right"></i></button>
-                    </div>
-                    <div id="calendarGrid" class="calendar-grid"></div>
-                </div>
-
-                <!-- Stats -->
+                <!-- Stats (before calendar) -->
                 <div class="stats-container">
                     <div class="stat-card">
                         <div class="stat-value" id="totalTasksCount">0</div>
-                        <div style="color: var(--text-muted); font-size: 0.85rem;">Total Tasks</div>
+                        <div class="stat-label">Total Tasks</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-value" id="pendingTasksCount" style="color: var(--warning)">0</div>
-                        <div style="color: var(--text-muted); font-size: 0.85rem;">Pending</div>
+                        <div class="stat-value stat-value--warning" id="pendingTasksCount">0</div>
+                        <div class="stat-label">Pending</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-value" id="completedTasksCount" style="color: var(--success)">0</div>
-                        <div style="color: var(--text-muted); font-size: 0.85rem;">Completed</div>
+                        <div class="stat-value stat-value--success" id="completedTasksCount">0</div>
+                        <div class="stat-label">Completed</div>
+                    </div>
+                </div>
+
+                <!-- Calendar + Urgent Row -->
+                <div class="calendar-urgent-row">
+                    <div class="calendar-section">
+                        <div class="calendar-header">
+                            <button onclick="app.changeMonth(-1)" class="btn btn-outline" title="Previous Month"><i class="fa-solid fa-chevron-left"></i></button>
+                            <h2 id="calendarMonthYear" class="calendar-month-title">Month Year</h2>
+                            <button onclick="app.changeMonth(1)" class="btn btn-outline" title="Next Month"><i class="fa-solid fa-chevron-right"></i></button>
+                        </div>
+                        <div id="calendarGrid" class="calendar-grid"></div>
+                    </div>
+                    <div class="urgent-section">
+                        <div class="urgent-header">
+                            <span>Urgent Tasks</span>
+                        </div>
+                        <div id="urgentTasksList" class="urgent-list"></div>
                     </div>
                 </div>
 
@@ -148,30 +160,30 @@
     <template id="task-form-template">
         <div class="auth-wrapper">
             <div class="form-card fade-in">
-                <h2 id="formTitle" style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px;">
-                    <i class="fa-solid fa-calendar-check" style="color: var(--primary)"></i>
+                <h2 id="formTitle" class="form-title">
+                    <i class="fa-solid fa-calendar-check form-title-icon"></i>
                     <span>Create New Task</span>
                 </h2>
                 <form onsubmit="app.handleTaskSubmit(event)">
                     <input type="hidden" id="taskId">
                     <div class="form-group">
-                        <label>Task Title</label>
+                        <label for="taskTitle">Task Title</label>
                         <input type="text" id="taskTitle" required placeholder="e.g., Final Exam Review">
                     </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-row">
                         <div class="form-group">
-                            <label>Subject</label>
-                            <select id="taskSubject" required>
-                                <option value="Mathematics">Mathematics</option>
-                                <option value="Physics">Physics</option>
-                                <option value="Computer Science">Computer Science</option>
-                                <option value="Literature">Literature</option>
-                                <option value="History">History</option>
-                                <option value="Other">Other</option>
-                            </select>
+                            <label for="taskSubject">Subject</label>
+                            <div class="subject-select-row">
+                                <select id="taskSubject" required></select>
+                                <button type="button" class="btn btn-outline subject-add-toggle" onclick="app.toggleAddSubject()" title="Add new subject"><i class="fa-solid fa-plus"></i></button>
+                            </div>
+                            <div id="addSubjectRow" class="add-subject-row">
+                                <input type="text" id="newSubjectInput" placeholder="New subject name" onkeydown="if(event.key==='Enter'){event.preventDefault();app.handleAddSubject();}">
+                                <button type="button" class="btn btn-primary add-subject-btn" onclick="app.handleAddSubject()">Add</button>
+                            </div>
                         </div>
                         <div class="form-group">
-                            <label>Priority Level</label>
+                            <label for="taskPriority">Priority Level</label>
                             <select id="taskPriority">
                                 <option value="low">Low</option>
                                 <option value="medium" selected>Medium</option>
@@ -180,14 +192,14 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label>Due Date</label>
+                        <label for="taskDueDate">Due Date</label>
                         <input type="date" id="taskDueDate" required>
                     </div>
                     <div class="form-group">
-                        <label>Description (Optional)</label>
+                        <label for="taskDescription">Description (Optional)</label>
                         <textarea id="taskDescription" rows="3" placeholder="Add specific details or sub-tasks..."></textarea>
                     </div>
-                    <div style="display:flex; gap:12px; margin-top: 10px;">
+                    <div class="form-actions">
                         <button type="submit" class="btn btn-primary btn-block">Save Task</button>
                         <button type="button" class="btn btn-outline btn-block" onclick="app.navigate('dashboard')">Cancel</button>
                     </div>
@@ -202,21 +214,34 @@
             <div class="modal-card fade-in" onclick="event.stopPropagation()">
                 <div class="modal-header">
                     <div class="modal-title" id="modalTitle">Task Name</div>
-                    <button class="btn btn-outline" style="padding: 5px; border:none;" onclick="app.closeModal()"><i class="fa-solid fa-xmark"></i></button>
+                    <button class="btn btn-outline modal-close-btn" onclick="app.closeModal()"><i class="fa-solid fa-xmark"></i></button>
                 </div>
-                <div id="modalBadgeContainer" style="margin-bottom: 10px;"></div>
-                <div id="modalSubject" style="font-weight: 600; color: var(--primary); font-size: 0.9rem; margin-bottom: 5px;">Subject</div>
-                <p id="modalDesc" style="color: var(--text-muted); margin: 15px 0 25px 0; font-size: 1rem; min-height: 60px;">Description goes here...</p>
-                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 15px;">
-                    <span id="modalDate" style="font-size: 0.85rem; color: var(--text-muted);"><i class="fa-regular fa-calendar"></i> Due: </span>
-                    <div style="display: flex; gap: 8px;">
-                        <button class="btn btn-outline" id="modalDeleteBtn" title="Delete"><i class="fa-solid fa-trash" style="color: var(--danger)"></i></button>
-                        <button class="btn btn-primary" id="modalEditBtn" style="padding: 6px 15px; font-size: 0.85rem;">Edit</button>
+                <div id="modalBadgeContainer" class="modal-badge-container"></div>
+                <div id="modalSubject" class="modal-subject">Subject</div>
+                <p id="modalDesc" class="modal-desc">Description goes here...</p>
+                <div class="modal-footer">
+                    <span id="modalDate" class="modal-date"><i class="fa-regular fa-calendar"></i> Due: </span>
+                    <div class="modal-actions">
+                        <button class="btn btn-outline" id="modalDeleteBtn" title="Delete"><i class="fa-solid fa-trash modal-delete-icon"></i></button>
+                        <button class="btn btn-primary modal-edit-btn" id="modalEditBtn">Edit</button>
                     </div>
                 </div>
             </div>
         </div>
     </template>
+    <!-- Load backend scripts (simulated server stack) -->
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/cookies.js"></script>
+    <script src="js/db/db_api.js"></script>
+    <script src="js/db/user_db.js"></script>
+    <script src="js/db/task_db.js"></script>
+    <script src="js/network/fajax.js"></script>
+    <script src="js/network/network.js"></script>
+    <script src="js/server/auth_server.js"></script>
+    <script src="js/server/task_server.js"></script>
+    <script src="js/client.js"></script>
+    <!-- Load app UI -->
     <script src="js/app.js"></script>
 </body>
 </html>

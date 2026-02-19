@@ -20,7 +20,7 @@ const TasksServer = {
         
         try {
             // Verify authentication - check UserId header first, then cookies
-            let userId = request.headers['UserId'];
+            let userId = request.headers[CONFIG.HEADERS.USER_ID];
             
             // If no UserId header, try to get from cookies
             if (!userId && request.headers['Cookie']) {
