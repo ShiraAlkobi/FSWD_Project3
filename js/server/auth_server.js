@@ -27,6 +27,8 @@ const AuthServer = {
                 this.handleRegister(request, callback);
             } else if (url === CONFIG.API.LOGIN && request.method === 'POST') {
                 this.handleLogin(request, callback);
+            } else if (url === CONFIG.API.PROFILE && request.method === 'GET') {
+                this.handleProfile(request, callback);
             } else {
                 // Unknown endpoint
                 this.sendResponse(callback, CONFIG.STATUS.NOT_FOUND, false, 
@@ -142,6 +144,38 @@ const AuthServer = {
             { 'Set-Cookie': setCookieHeaders });
     },
     
+    /**
+     * Handle GET /api/auth/profile — validate session and return user data
+     */
+    handleProfile: function(request, callback) {
+        Utils.log('AuthServer', 'Handling profile request');
+
+        let userId = request.headers[CONFIG.HEADERS.USER_ID];
+        if (!userId && request.headers['Cookie']) {
+            const cookies = request.headers['Cookie'].split(';').reduce((acc, c) => {
+                const [k, v] = c.trim().split('=');
+                if (k && v) acc[k] = v;
+                return acc;
+            }, {});
+            userId = cookies[COOKIE_NAMES.USER_ID] || null;
+        }
+
+        if (!userId) {
+            return this.sendResponse(callback, CONFIG.STATUS.UNAUTHORIZED, false,
+                CONFIG.MESSAGES.UNAUTHORIZED_ACCESS, null);
+        }
+
+        const user = UsersDB.getUserById(userId);
+        if (!user) {
+            return this.sendResponse(callback, CONFIG.STATUS.NOT_FOUND, false,
+                CONFIG.MESSAGES.USER_NOT_FOUND, null);
+        }
+
+        this.sendResponse(callback, CONFIG.STATUS.OK, true, 'Profile retrieved', {
+            user: { id: user.id, email: user.email, name: user.name }
+        });
+    },
+
     /**
      * Validate user authentication by userId
      * Checks header first, then cookies

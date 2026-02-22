@@ -10,6 +10,7 @@ const CONFIG = {
         
         REGISTER: '/api/auth/register',
         LOGIN: '/api/auth/login',
+        PROFILE: '/api/auth/profile',
         
         TASKS: '/api/tasks',
         TASK_BY_ID: (id) => `/api/tasks/${id}`
@@ -17,9 +18,9 @@ const CONFIG = {
     
     // Network Configuration
     NETWORK: {
-        MIN_DELAY: 0,      // Minimum delay in milliseconds (1 second)
-        MAX_DELAY: 1000,      // Maximum delay in milliseconds (3 seconds)
-        DROP_RATE: 0.0        // Message drop probability (20%)
+        MIN_DELAY: 1000,      // Minimum delay in milliseconds (1 second)
+        MAX_DELAY: 3000,      // Maximum delay in milliseconds (3 seconds)
+        DROP_RATE: 0.2        // Message drop probability (20%)
     },
     
     // LocalStorage Keys

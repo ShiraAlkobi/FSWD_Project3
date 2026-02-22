@@ -29,25 +29,28 @@ const app = {
     //  Session / Auth
     // ══════════════════════════════════════════
 
-    restoreSession: function() {
+    restoreSession: async function() {
         if (typeof CookieManager === 'undefined') return null;
         const userId = CookieManager.get(COOKIE_NAMES.USER_ID);
-        const email  = CookieManager.get(COOKIE_NAMES.USER_EMAIL);
-        if (userId && email) {
-            const user = UsersDB.getUserById(userId);
-            if (user) {
-                this.currentUserId = user.id;
-                this.currentUser = { id: user.id, email: user.email, name: user.name };
-                Utils.log('App', 'Session restored from cookies for: ' + email);
-                return this.currentUser;
-            }
+        if (!userId) return null;
+
+        try {
+            const res = await ClientAPI.sendRequest('GET', CONFIG.API.PROFILE, {
+                headers: { [CONFIG.HEADERS.USER_ID]: userId }
+            });
+            this.currentUserId = res.data.user.id;
+            this.currentUser   = res.data.user;
+            Utils.log('App', 'Session restored via network for: ' + res.data.user.email);
+            return this.currentUser;
+        } catch (error) {
+            Utils.log('App', 'Session restore failed', error);
+            return null;
         }
-        return null;
     },
 
-    init: function() {
+    init: async function() {
         Utils.log('App', 'Initializing application...');
-        const restored = this.restoreSession();
+        const restored = await this.restoreSession();
         if (restored) {
             this.navigate('dashboard');
         } else {
@@ -58,6 +61,10 @@ const app = {
 
     handleLogin: async function(e) {
         e.preventDefault();
+        const btn = e.target.querySelector('button[type="submit"]');
+        const btnText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Loading...';
         const email    = document.getElementById('loginEmail').value;
         const password = document.getElementById('loginPassword').value;
         Utils.log('App', 'Login attempt for: ' + email);
@@ -73,8 +80,10 @@ const app = {
         } catch (error) {
             Utils.log('App', 'Login failed', error);
             const err = document.getElementById('loginError');
-            err.textContent = error.message || 'Login failed';
+            err.textContent = error.message || 'Login failed. Please try again.';
             err.style.display = 'block';
+            btn.disabled = false;
+            btn.textContent = btnText;
         }
     },
 
@@ -104,6 +113,11 @@ const app = {
         }
         errEl.style.display = 'none';
 
+        const btn = e.target.querySelector('button[type="submit"]');
+        const btnText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Loading...';
+
         Utils.log('App', 'Register attempt for: ' + email);
         try {
             const res = await ClientAPI.sendRequest('POST', CONFIG.API.REGISTER, {
@@ -116,25 +130,13 @@ const app = {
             this.navigate('dashboard');
         } catch (error) {
             Utils.log('App', 'Registration failed', error);
-            errEl.textContent = error.message || 'Registration failed';
+            errEl.textContent = error.message || 'Registration failed. Please try again.';
             errEl.style.display = 'block';
+            btn.disabled = false;
+            btn.textContent = btnText;
         }
     },
 
-    checkPasswordMatch: function() {
-        const pw   = document.getElementById('regPassword');
-        const conf = document.getElementById('regConfirmPassword');
-        const err  = document.getElementById('regError');
-        if (!pw || !conf || !err) return;
-        if (conf.value.length === 0) {
-            err.style.display = 'none';
-        } else if (pw.value === conf.value) {
-            err.style.display = 'none';
-        } else {
-            err.textContent = 'Passwords do not match';
-            err.style.display = 'block';
-        }
-    },
 
     handleLogout: function() {
         Utils.log('App', 'Logging out...');
@@ -167,6 +169,10 @@ const app = {
 
     handleTaskSubmit: async function(e) {
         e.preventDefault();
+        const btn = e.target.querySelector('button[type="submit"]');
+        const btnText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
         const id = document.getElementById('taskId').value;
         const data = {
             title:       document.getElementById('taskTitle').value,
@@ -192,7 +198,9 @@ const app = {
             this.navigate('dashboard');
         } catch (error) {
             Utils.log('App', 'Task save failed', error);
-            alert(error.message || 'Failed to save task');
+            alert(error.message || 'Failed to save task. Please try again.');
+            btn.disabled = false;
+            btn.textContent = btnText;
         }
     },
 
@@ -206,6 +214,8 @@ const app = {
             this.loadTasks();
         } catch (error) {
             Utils.log('App', 'Toggle failed', error);
+            alert('Network error: Failed to update task. Reverting...');
+            this.renderTasks();
         }
     },
 
@@ -219,6 +229,7 @@ const app = {
             this.loadTasks();
         } catch (error) {
             Utils.log('App', 'Delete failed', error);
+            alert('Network error: Failed to delete task. Please try again.');
         }
     },
 
